@@ -1,7 +1,9 @@
 require('dotenv').config()
 
 const express = require('express')
-const app = express()
+
+const { privateKey, certificate, ca } = require('./certificates')
+const app = express.createServer({ key: privateKey, cert: certificate, ca: ca });
 const jwt = require('jsonwebtoken')
 
 app.use(express.json())
@@ -26,6 +28,11 @@ app.delete('/logout', (req, res) => {
 
 app.post('/login', (req, res) => {
     // Authenticate User
+    const { accesKey } = req.body
+    if (key !== process.env.ACCESS_KEY) {
+        res.json({ success: false, msg: "Invalid or missing access key" })
+        return
+    }
 
     const username = req.body.username
     const user = { name: username }

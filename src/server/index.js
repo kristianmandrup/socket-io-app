@@ -2,10 +2,8 @@
 /**
  * App.
  */
-const privateKey = fs.readFileSync('./certs//key').toString();
-const certificate = fs.readFileSync('./certs/crt').toString();
-const ca = fs.readFileSync('./certs/intermediate.crt').toString();
 
+const { privateKey, certificate, ca } = require('./certificates')
 const app = express.createServer({ key: privateKey, cert: certificate, ca: ca });
 const io = require('socket.io')(app);
 const jwt = require('jsonwebtoken');
