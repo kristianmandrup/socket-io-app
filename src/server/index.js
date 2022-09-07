@@ -16,6 +16,19 @@ const idMap = {}
 const socketMap = {
 }
 
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if (token == null) return res.sendStatus(401)
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        console.log(err)
+        if (err) return res.sendStatus(403)
+        req.user = user
+        next()
+    })
+}
+
 const isValidEventName = (eventName) => eventNames[eventName]
 
 const subscribeRoomInNamespace = (id, { namespace, room }) => {
@@ -41,8 +54,7 @@ const createNamespace = ({ id, subscriptions }) => {
     subscriptions.forEach(room => subscribeRoomInNamespace(id, { namespace, room }))
 }
 
-// TODO: add authentication
-app.post(`/client`, (req) => {
+app.post(`/client`, authenticateToken, (req) => {
     const { body } = req
     const { clientId, payload } = body
     if (clientMap[clientId]) {
@@ -51,10 +63,11 @@ app.post(`/client`, (req) => {
     }
     clientMap[clientId] = payload
     createNamespace(payload)
+    res.json({ success: true })
 })
 
-// TODO: add authentication
-app.delete(`/client`, (req) => {
+
+app.delete(`/client`, authenticateToken, (req) => {
     const { params } = req
     const { id } = params
     clientMap[id] = {}
@@ -68,10 +81,11 @@ app.delete(`/client`, (req) => {
     // TODO: examine if we need this
     const sockets = Object.values(clSocketMap)
     sockets.forEach(socket => socket.disconnectSockets(true))
+    res.json({ success: true })
 })
 
-// TODO: add authentication
-app.post(`/event`, (req, res) => {
+
+app.post(`/event`, authenticateToken, (req, res) => {
     const { body } = req
     const { clientId, eventName } = body
     const clSocketMap = socketMap[clientId]
@@ -88,8 +102,8 @@ app.post(`/event`, (req, res) => {
     res.json({ success: true })
 })
 
-// TODO: add authentication
-app.delete(`/event`, (req) => {
+
+app.delete(`/event`, authenticateToken, (req) => {
     const { params } = req
     const { clientId, eventName } = params
     clientMap[clientId] = {}
@@ -104,11 +118,12 @@ app.delete(`/event`, (req) => {
     }
     const socket = clSocketMap[eventName]
     socket.disconnectSockets(true)
+    res.json({ success: true })
 })
 
 const onEventPostEmitToClientSocket = (eventName) => {
-    // TODO: add authentication
-    app.post(`/${eventName}`, (req) => {
+
+    app.post(`/${eventName}`, authenticateToken, (req) => {
         const { body } = req
         const { clientId } = body
         const clSocketMap = socketMap[clientId]
@@ -118,12 +133,12 @@ const onEventPostEmitToClientSocket = (eventName) => {
         }
         const socket = clSocketMap[eventName]
         socket.emit(eventName, body)
+        res.json({ success: true })
     })
 }
 
 eventNames.forEach(onEventPostEmitToClientSocket)
 
-// TODO: add authentication, port settings etc
 io.on("connection", (socket) => {
     console.log(socket.rooms);
 });

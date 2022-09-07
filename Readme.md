@@ -8,6 +8,23 @@ A transaction can be:
 - `completed`
 - `cancelled`
 
+## Authentication
+
+The endpoints are protected using JWT base authentication. Provide the following ENV variables in a `.env` file on deployment.
+
+```txt
+ACCESS_TOKEN_SECRET=
+REFRESH_TOKEN_SECRET=
+```
+
+Use the `auth-server` to handle authentication such as:
+
+- `login`
+- `logout`
+- `token` generate new token
+
+The auth server is set to run on port `4000`
+
 ## API endpoints
 
 ### Cancelled transaction
