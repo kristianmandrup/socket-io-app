@@ -56,9 +56,9 @@ app.post(`/client`, (req) => {
 // TODO: add authentication
 app.delete(`/client`, (req) => {
     const { params } = req
-    const { clientId } = params
-    clientMap[clientId] = {}
-    const clSocketMap = socketMap[clientId]
+    const { id } = params
+    clientMap[id] = {}
+    const clSocketMap = socketMap[id]
     if (!clSocketMap) {
         res.json({ success: false, msg: 'no such client' })
         return

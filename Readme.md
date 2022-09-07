@@ -10,6 +10,52 @@ A transaction can be:
 
 ## API endpoints
 
+### Cancelled transaction
+
+POST `/cancelled` transaction
+
+```json
+{
+    "clientId": "xyz", 
+    "payload": {
+        // as you wish
+    }
+}
+```
+
+Will emit `cancelled` event with `payload` to socket for that client
+
+### Denied transaction
+
+POST `/denied`
+
+```json
+{
+    "clientId": "xyz", 
+    "payload": {
+        // as you wish
+    }
+}
+```
+
+Will emit `denied` event with `payload` to socket for that client
+
+### Completed transaction
+
+POST `/completed`
+
+```json
+{
+    "clientId": "xyz", 
+    "payload": {
+        // as you wish
+    }
+}
+```
+
+Will emit `completed` event with `payload` to socket for that client
+
+
 ### Add client
 
 POST `/client`
@@ -44,6 +90,6 @@ POST `/event`
 
 ## Remove client event socket
 
-DELETE `/client?id=xyz`
+DELETE `/event?clientId=xyz&eventName=completed`
 
 Removes client from server and disconnects all sockets for that client
