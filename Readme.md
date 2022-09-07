@@ -24,9 +24,9 @@ Use the `auth-server` to handle authentication such as:
 - `logout` log out
 - `token` generate new token
 
-Login can be done either using an `accessKey` matching a secret `ACCESS_KEY` env var (for `Admin` users) or via `username` and `password` for client users.
+Login can be done either using an `accessKey` matching a secret `ACCESS_KEY` env var (for `Admin` users) or via `name` and `password` for client users.
 
-A placeholder `verifyUser({ username, password })` function is supplied that must be customized to do proper verification, such as by lookup in a database.
+A placeholder `verifyUser({ name, password })` function is supplied that must be customized to do proper verification, such as by lookup in a database.
 
 The JWT token is expected to be passed as a `Bearer` token in the `authorization` header
 

@@ -1,10 +1,6 @@
 // Server
-/**
- * App.
- */
-
-const { privateKey, certificate, ca } = require('./certificates')
-const app = express.createServer({ key: privateKey, cert: certificate, ca: ca });
+const { createCertApp } = require('./app');
+const app = createCertApp()
 const io = require('socket.io')(app);
 const jwt = require('jsonwebtoken');
 const clientMap = require('./clients');
@@ -19,7 +15,7 @@ function authenticateToken(req, res, next) {
     const token = authHeader && authHeader.split(' ')[1]
     if (token == null) return res.sendStatus(401)
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    jwt.verify(token, jwtAccessToken, (err, user) => {
         console.log(err)
         if (err) return res.sendStatus(403)
         req.user = user
@@ -43,13 +39,13 @@ const createNamespace = ({ id, subscriptions }) => {
     socketMap[id]['namespace'] = namespace
     namespace.use((socket, next) => {
         const token = socket.handshake.query.jwt;
-        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        jwt.verify(token, jwtAccessToken, (err, decoded) => {
             if (err) {
                 next(new Error('Hey hacker! you like jwt?'))
                 return
             }
-            const { username } = decoded || {}
-            if (username !== id) {
+            const { name } = decoded || {}
+            if (name !== id) {
                 next(new Error(`invalid user for namespace access`))
                 return
             }
@@ -123,6 +119,10 @@ app.delete(`/event`, authenticateToken, (req) => {
         return
     }
     const socket = clSocketMap[eventName]
+    if (!socket) {
+        res.json({ success: false, msg: `no client socket for: ${eventName}` })
+        return
+    }
     socket.disconnectSockets(true)
     res.json({ success: true })
 })
@@ -138,6 +138,10 @@ const onEventPostEmitToClientSocket = (eventName) => {
             return
         }
         const socket = clSocketMap[eventName]
+        if (!socket) {
+            res.json({ success: false, msg: `no client socket for: ${eventName}` })
+            return
+        }
         socket.emit(eventName, body)
         res.json({ success: true })
     })

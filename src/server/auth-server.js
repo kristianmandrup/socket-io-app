@@ -1,17 +1,15 @@
 require('dotenv').config()
-
-const express = require('express')
-
-const { privateKey, certificate, ca } = require('./certificates')
-const app = express.createServer({ key: privateKey, cert: certificate, ca: ca });
-const jwt = require('jsonwebtoken')
+const { createCertApp } = require('./app');
+const app = createCertApp()
+const jwt = require('jsonwebtoken');
+const { jwtRefreshToken, jwtAccessToken } = require('./tokens');
 
 app.use(express.json())
 
 let refreshTokens = []
 
 // TODO
-const verifyUser = ({ username, password }) => {
+const verifyUser = ({ name, password }) => {
     return true
 }
 
@@ -19,10 +17,10 @@ app.post('/token', (req, res) => {
     const refreshToken = req.body.token
     if (refreshToken == null) return res.sendStatus(401)
     if (!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    jwt.verify(refreshToken, jwtRefreshToken, (err, user) => {
         if (err) return res.sendStatus(403)
         const accessToken = generateAccessToken({ name: user.name })
-        res.json({ accessToken: accessToken })
+        res.json({ accessToken })
     })
 })
 
@@ -40,24 +38,24 @@ app.post('/login', (req, res) => {
             res.json({ success: false, msg: "Invalid or missing access key" })
             return
         }
-        user = { username: 'ADMIN' }
+        user = { name: 'ADMIN' }
     } else {
-        const { username, password } = req.body
-        user = { username }
-        if (!verifyUser({ username, password })) {
+        const { name, password } = req.body
+        user = { name }
+        if (!verifyUser({ name, password })) {
             res.json({ success: false, msg: "Invalid user" })
             return
         }
     }
 
     const accessToken = generateAccessToken(user)
-    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
+    const refreshToken = jwt.sign(user, jwtRefreshToken)
     refreshTokens.push(refreshToken)
-    res.json({ accessToken: accessToken, refreshToken: refreshToken })
+    res.json({ accessToken, refreshToken })
 })
 
 function generateAccessToken(user) {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15s' })
+    return jwt.sign(user, jwtAccessToken, { expiresIn: '15s' })
 }
 
 app.listen(4000)
