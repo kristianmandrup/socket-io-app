@@ -10,14 +10,36 @@ const idMap = {}
 const socketMap = {
 }
 
-function authenticateToken(req, res, next) {
+const getToken = (req) => {
     const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
+    return authHeader && authHeader.split(' ')[1]
+}
+
+
+const authenticateToken = (req, res, next) => {
+    const token = getToken(req)
     if (token == null) return res.sendStatus(401)
 
     jwt.verify(token, jwtAccessToken, (err, user) => {
         console.log(err)
         if (err) return res.sendStatus(403)
+        req.user = user
+        next()
+    })
+}
+
+const authenticateAminToken = (req, res, next) => {
+    const token = getToken(req)
+    if (token == null) return res.sendStatus(401)
+
+    jwt.verify(token, jwtAccessToken, (err, user) => {
+        console.log(err)
+        if (err) {
+            return res.sendStatus(403)
+        }
+        if (user.name !== 'ADMIN') {
+            return res.sendStatus(403)
+        }
         req.user = user
         next()
     })
@@ -129,7 +151,7 @@ app.delete(`/event`, authenticateToken, (req) => {
 
 const onEventPostEmitToClientSocket = (eventName) => {
 
-    app.post(`/${eventName}`, authenticateToken, (req) => {
+    app.post(`/${eventName}`, authenticateAminToken, (req) => {
         const { body } = req
         const { clientId } = body
         const clSocketMap = socketMap[clientId]
