@@ -10,17 +10,18 @@ const app = express.createServer({ key: privateKey, cert: certificate, ca: ca })
 const io = require('socket.io')(app);
 const jwt = require('jsonwebtoken');
 const clientMap = require('./clients');
-const eventTypes = ['denied', 'cancelled', 'completed']
+const eventNames = ['denied', 'cancelled', 'completed']
 const idMap = {}
 
 const socketMap = {
 }
 
+const isValidEventName = (eventName) => eventNames[eventName]
+
 const subscribeRoomInNamespace = (id, { namespace, room }) => {
     const socket = namespace.in(room)
     socketMap[id][room] = socket
 }
-
 
 const createNamespace = ({ id, subscriptions }) => {
     if (!id) return
@@ -40,6 +41,7 @@ const createNamespace = ({ id, subscriptions }) => {
     subscriptions.forEach(room => subscribeRoomInNamespace(id, { namespace, room }))
 }
 
+// TODO: add authentication
 app.post(`/client`, (req) => {
     const { body } = req
     const { clientId, payload } = body
@@ -51,6 +53,7 @@ app.post(`/client`, (req) => {
     createNamespace(payload)
 })
 
+// TODO: add authentication
 app.delete(`/client`, (req) => {
     const { params } = req
     const { clientId } = params
@@ -60,10 +63,14 @@ app.delete(`/client`, (req) => {
         res.json({ success: false, msg: 'no such client' })
         return
     }
+    const nsSocket = clSocketMap['namespace']
+    nsSocket.disconnectSockets(true)
+    // TODO: examine if we need this
     const sockets = Object.values(clSocketMap)
     sockets.forEach(socket => socket.disconnectSockets(true))
 })
 
+// TODO: add authentication
 app.post(`/event`, (req, res) => {
     const { body } = req
     const { clientId, eventName } = body
@@ -72,11 +79,16 @@ app.post(`/event`, (req, res) => {
         res.json({ success: false, msg: 'no such client' })
         return
     }
+    if (!isValidEventName(eventName)) {
+        res.json({ success: false, msg: `invalid event name: ${eventName}` })
+        return
+    }
     const namespace = clSocketMap['namespace']
     subscribeRoomInNamespace(clientId, { namespace, room: eventName })
     res.json({ success: true })
 })
 
+// TODO: add authentication
 app.delete(`/event`, (req) => {
     const { params } = req
     const { clientId, eventName } = params
@@ -86,12 +98,17 @@ app.delete(`/event`, (req) => {
         res.json({ success: false, msg: 'no such client' })
         return
     }
+    if (!isValidEventName(eventName)) {
+        res.json({ success: false, msg: `invalid event name: ${eventName}` })
+        return
+    }
     const socket = clSocketMap[eventName]
     socket.disconnectSockets(true)
 })
 
-const onEventPostEmitToClientSocket = (eventType) => {
-    app.post(`/${eventType}`, (req) => {
+const onEventPostEmitToClientSocket = (eventName) => {
+    // TODO: add authentication
+    app.post(`/${eventName}`, (req) => {
         const { body } = req
         const { clientId } = body
         const clSocketMap = socketMap[clientId]
@@ -99,16 +116,16 @@ const onEventPostEmitToClientSocket = (eventType) => {
             res.json({ success: false, msg: 'no such client' })
             return
         }
-        const socket = clSocketMap[eventType]
-        socket.emit(eventType, body)
+        const socket = clSocketMap[eventName]
+        socket.emit(eventName, body)
     })
 }
 
-eventTypes.forEach(onEventPostEmitToClientSocket)
+eventNames.forEach(onEventPostEmitToClientSocket)
 
+// TODO: add authentication, port settings etc
 io.on("connection", (socket) => {
-    console.log(socket.rooms); // Set { <socket.id> }
-    // socket.join("room1");
+    console.log(socket.rooms);
 });
 
 const clients = Object.values(clientMap)

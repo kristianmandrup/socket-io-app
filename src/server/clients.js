@@ -1,7 +1,7 @@
 export const clients = {
-    dunelm: {
-        id: 'dunelm',
-        name: 'Dunelm',
+    xyz: {
+        id: 'xyz',
+        name: 'Xyz',
         subscriptions: ['completed', 'denied', 'cancelled', 'all']
     }
 }
