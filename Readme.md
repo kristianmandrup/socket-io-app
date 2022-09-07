@@ -10,18 +10,25 @@ A transaction can be:
 
 ## Authentication
 
-The endpoints are protected using JWT base authentication. Provide the following ENV variables in a `.env` file on deployment.
+The endpoints are protected using JWT base authentication. Provide the following env variables in a `.env` file on deployment.
 
 ```txt
 ACCESS_TOKEN_SECRET=
 REFRESH_TOKEN_SECRET=
+ACCESS_KEY=
 ```
 
 Use the `auth-server` to handle authentication such as:
 
-- `login`
-- `logout`
+- `login` log in 
+- `logout` log out
 - `token` generate new token
+
+Login can be done either using an `accessKey` matching a secret `ACCESS_KEY` env var (for `Admin` users) or via `username` and `password` for client users.
+
+A placeholder `verifyUser({ username, password })` function is supplied that must be customized to do proper verification, such as by lookup in a database.
+
+The JWT token is expected to be passed as a `Bearer` token in the `authorization` header
 
 The auth server is set to run on port `4000`
 

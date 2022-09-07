@@ -43,9 +43,17 @@ const createNamespace = ({ id, subscriptions }) => {
     socketMap[id]['namespace'] = namespace
     namespace.use((socket, next) => {
         const token = socket.handshake.query.jwt;
-        jwt.verify(token, jwtKey, (err, decoded) => {
-            if (err) next(new Error('Hey hacker! you like jwt?'))
-            else next();
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+            if (err) {
+                next(new Error('Hey hacker! you like jwt?'))
+                return
+            }
+            const { username } = decoded || {}
+            if (username !== id) {
+                next(new Error(`invalid user for namespace access`))
+                return
+            }
+            next();
         });
     });
 

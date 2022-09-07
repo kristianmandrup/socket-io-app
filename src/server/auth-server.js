@@ -10,6 +10,11 @@ app.use(express.json())
 
 let refreshTokens = []
 
+// TODO
+const verifyUser = ({ username, password }) => {
+    return true
+}
+
 app.post('/token', (req, res) => {
     const refreshToken = req.body.token
     if (refreshToken == null) return res.sendStatus(401)
@@ -29,13 +34,21 @@ app.delete('/logout', (req, res) => {
 app.post('/login', (req, res) => {
     // Authenticate User
     const { accesKey } = req.body
-    if (key !== process.env.ACCESS_KEY) {
-        res.json({ success: false, msg: "Invalid or missing access key" })
-        return
+    let user
+    if (accesKey) {
+        if (accesKey !== process.env.ACCESS_KEY) {
+            res.json({ success: false, msg: "Invalid or missing access key" })
+            return
+        }
+        user = { username: 'ADMIN' }
+    } else {
+        const { username, password } = req.body
+        user = { username }
+        if (!verifyUser({ username, password })) {
+            res.json({ success: false, msg: "Invalid user" })
+            return
+        }
     }
-
-    const username = req.body.username
-    const user = { name: username }
 
     const accessToken = generateAccessToken(user)
     const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET)
